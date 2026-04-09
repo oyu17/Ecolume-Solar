@@ -1,11 +1,23 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Check, Zap, Battery, Home, Building2, ShieldCheck } from 'lucide-react';
+import { Check, Zap, Battery, ShieldCheck } from 'lucide-react';
 import { useCurrency } from '../hooks/useCurrency';
-import { PACKAGES } from '../constants';
+import { DataService } from '../services/dataService';
+import { ProductPackage } from '../contracts/types';
 
 export const ProductPackages = () => {
   const { formatPrice } = useCurrency();
+  const [packages, setPackages] = useState<ProductPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      const data = await DataService.getPackages();
+      setPackages(data);
+      setLoading(false);
+    };
+    fetchPackages();
+  }, []);
 
   return (
     <section className="py-24 bg-white" id="products">
@@ -17,57 +29,63 @@ export const ProductPackages = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {PACKAGES.map((pkg, idx) => (
-            <motion.div
-              key={pkg.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className={`relative p-8 rounded-3xl border-2 transition-all hover:shadow-2xl ${
-                idx === 1 ? 'border-forest-green shadow-xl scale-105 z-10' : 'border-gray-100'
-              }`}
-            >
-              {idx === 1 && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-forest-green text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-                  Most Popular
-                </div>
-              )}
-
-              <div className="mb-6">
-                <h3 className="text-xl font-bold text-forest-green mb-1">{pkg.name}</h3>
-                <div className="flex items-center gap-2 text-slate-gray text-sm mb-4">
-                  <Zap className="w-4 h-4 text-sunflower-yellow" />
-                  {pkg.capacity}
-                </div>
-                <p className="text-sm text-slate-gray font-medium mb-6">{pkg.idealFor}</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-forest-green">{formatPrice(pkg.pricePHP)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                {pkg.features.map((feature) => (
-                  <div key={feature} className="flex items-start gap-3">
-                    <div className="mt-1 bg-forest-green/10 p-0.5 rounded-full">
-                      <Check className="w-3 h-3 text-forest-green" />
-                    </div>
-                    <span className="text-sm text-slate-gray">{feature}</span>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-pulse text-forest-green font-bold">Loading packages...</div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-8">
+            {packages.map((pkg, idx) => (
+              <motion.div
+                key={pkg.id || pkg.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className={`relative p-8 rounded-3xl border-2 transition-all hover:shadow-2xl ${
+                  pkg.popular ? 'border-forest-green shadow-xl scale-105 z-10' : 'border-gray-100'
+                }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-forest-green text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+                    Most Popular
                   </div>
-                ))}
-              </div>
+                )}
 
-              <button className={`w-full py-4 rounded-xl font-bold transition-all ${
-                idx === 1 
-                  ? 'bg-forest-green text-white hover:bg-opacity-90' 
-                  : 'bg-gray-100 text-forest-green hover:bg-gray-200'
-              }`}>
-                Select This Package
-              </button>
-            </motion.div>
-          ))}
-        </div>
+                <div className="mb-6">
+                  <h3 className="text-xl font-bold text-forest-green mb-1">{pkg.name}</h3>
+                  <div className="flex items-center gap-2 text-slate-gray text-sm mb-4">
+                    <Zap className="w-4 h-4 text-sunflower-yellow" />
+                    {pkg.capacity}
+                  </div>
+                  <p className="text-sm text-slate-gray font-medium mb-6">{pkg.idealFor}</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-bold text-forest-green">{formatPrice(pkg.pricePHP)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mb-8">
+                  {pkg.features.map((feature, fIdx) => (
+                    <div key={fIdx} className="flex items-start gap-3">
+                      <div className="mt-1 bg-forest-green/10 p-0.5 rounded-full">
+                        <Check className="w-3 h-3 text-forest-green" />
+                      </div>
+                      <span className="text-sm text-slate-gray">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button className={`w-full py-4 rounded-xl font-bold transition-all ${
+                  pkg.popular 
+                    ? 'bg-forest-green text-white hover:bg-opacity-90' 
+                    : 'bg-gray-100 text-forest-green hover:bg-gray-200'
+                }`}>
+                  Select This Package
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Battery Feature Section */}
         <div className="mt-20 bg-gray-50 rounded-[3rem] p-8 md:p-16 overflow-hidden relative">

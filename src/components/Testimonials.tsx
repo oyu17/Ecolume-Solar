@@ -1,37 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, Quote } from 'lucide-react';
-
-const TESTIMONIALS = [
-  {
-    text: "Our monthly bill went from ₱12,000 to ₱800. The calculator was spot on, and the installation team treated our home like their own.",
-    author: "Maria Santos",
-    role: "Homeowner, Quezon City",
-    image: "https://i.pravatar.cc/150?u=ecolume1"
-  },
-  {
-    text: "Ecolume handled everything perfectly. The 10kWp system with battery backup means we don't even notice when the grid goes down anymore.",
-    author: "Juan Dela Cruz",
-    role: "Business Owner, Cavite",
-    image: "https://i.pravatar.cc/150?u=ecolume2"
-  },
-  {
-    text: "Very professional team. They explained the ROI clearly without any confusing jargon. Best investment for our family.",
-    author: "Elena Reyes",
-    role: "Homeowner, Cebu",
-    image: "https://i.pravatar.cc/150?u=ecolume3"
-  }
-];
+import { DataService } from '../services/dataService';
+import { Testimonial } from '../contracts/types';
 
 export const Testimonials = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchTestimonials = async () => {
+      const data = await DataService.getTestimonials();
+      setTestimonials(data);
+      setLoading(false);
+    };
+    fetchTestimonials();
+  }, []);
+
+  useEffect(() => {
+    if (testimonials.length === 0) return;
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [testimonials.length]);
+
+  if (loading) {
+    return <section className="py-24 bg-forest-green text-white flex justify-center"><div className="animate-pulse">Loading testimonials...</div></section>;
+  }
+
+  if (testimonials.length === 0) return null;
 
   return (
     <section className="py-24 bg-forest-green text-white overflow-hidden">
@@ -53,15 +52,15 @@ export const Testimonials = () => {
                 {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-5 h-5 text-sunflower-yellow fill-current" />)}
               </div>
               <p className="text-2xl md:text-3xl font-medium mb-8 leading-relaxed italic">
-                "{TESTIMONIALS[currentIndex].text}"
+                "{testimonials[currentIndex].text}"
               </p>
               <div className="flex items-center justify-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-gray-200 overflow-hidden">
-                  <img src={TESTIMONIALS[currentIndex].image} alt={TESTIMONIALS[currentIndex].author} referrerPolicy="no-referrer" />
+                  <img src={testimonials[currentIndex].image} alt={testimonials[currentIndex].author} referrerPolicy="no-referrer" />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-sunflower-yellow">{TESTIMONIALS[currentIndex].author}</p>
-                  <p className="text-sm opacity-80">{TESTIMONIALS[currentIndex].role}</p>
+                  <p className="font-bold text-sunflower-yellow">{testimonials[currentIndex].author}</p>
+                  <p className="text-sm opacity-80">{testimonials[currentIndex].role}</p>
                 </div>
               </div>
             </motion.div>
@@ -69,7 +68,7 @@ export const Testimonials = () => {
         </div>
         
         <div className="flex justify-center gap-2 mt-8">
-          {TESTIMONIALS.map((_, idx) => (
+          {testimonials.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
