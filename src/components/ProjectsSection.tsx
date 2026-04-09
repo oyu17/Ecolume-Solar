@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { X } from 'lucide-react';
 import { DataService } from '../services/dataService';
 import { Project } from '../contracts/types';
 
 export const ProjectsSection = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -15,6 +17,18 @@ export const ProjectsSection = () => {
     };
     fetchProjects();
   }, []);
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (selectedProject) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedProject]);
 
   return (
     <section className="py-24 bg-gray-50 relative" id="projects">
@@ -49,7 +63,8 @@ export const ProjectsSection = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.1 }}
                   viewport={{ once: true }}
-                  className="group bg-white rounded-none overflow-hidden shadow-sm hover:shadow-xl transition-all border-b-4 border-transparent hover:border-sunflower-yellow flex flex-col"
+                  onClick={() => setSelectedProject(project)}
+                  className="group bg-white rounded-none overflow-hidden shadow-sm hover:shadow-xl transition-all border-b-4 border-transparent hover:border-sunflower-yellow flex flex-col cursor-pointer"
                 >
                   <div className="relative h-56 overflow-hidden">
                     <img 
@@ -65,7 +80,7 @@ export const ProjectsSection = () => {
                     </div>
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
-                    <p className="text-slate-gray text-sm mb-6 flex-1">{project.capacity}</p>
+                    <p className="text-slate-gray text-sm mb-6 flex-1 line-clamp-3">{project.capacity}</p>
                     
                     <div className="flex flex-wrap gap-2 mt-auto">
                       <span className="bg-gray-100 text-forest-green px-2 py-1 text-xs font-bold rounded-sm">
@@ -91,6 +106,80 @@ export const ProjectsSection = () => {
           <p className="text-lg opacity-90">And counting every second...</p>
         </div>
       </div>
+
+      {/* Project Details Modal */}
+      <AnimatePresence>
+        {selectedProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedProject(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-2xl shadow-2xl overflow-hidden w-full max-w-4xl z-10 flex flex-col md:flex-row max-h-[90vh]"
+            >
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="absolute top-4 right-4 z-20 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              
+              <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+                <img 
+                  src={selectedProject.image} 
+                  alt={selectedProject.title} 
+                  className="w-full h-full object-cover" 
+                  referrerPolicy="no-referrer" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden"></div>
+              </div>
+              
+              <div className="w-full md:w-1/2 p-8 md:p-10 overflow-y-auto flex flex-col">
+                <div className="mb-6">
+                  <span className="bg-forest-green/10 text-forest-green px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider inline-block mb-4">
+                    {selectedProject.type}
+                  </span>
+                  <h3 className="text-2xl md:text-3xl font-bold text-forest-green leading-tight mb-2">
+                    {selectedProject.title}
+                  </h3>
+                  <p className="text-sunflower-yellow font-bold text-lg">
+                    {selectedProject.location}
+                  </p>
+                </div>
+                
+                <div className="prose prose-sm text-slate-gray mb-8 flex-1">
+                  <p className="text-base leading-relaxed">{selectedProject.capacity}</p>
+                  
+                  <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <h4 className="font-bold text-forest-green mb-2">Project Highlights</h4>
+                    <ul className="list-disc list-inside space-y-1 text-sm">
+                      <li>Custom-engineered solar solution</li>
+                      <li>Professional installation & commissioning</li>
+                      <li>Long-term reliability and efficiency</li>
+                      <li>Significant reduction in energy costs</li>
+                    </ul>
+                  </div>
+                </div>
+                
+                <button 
+                  onClick={() => setSelectedProject(null)}
+                  className="w-full bg-gray-100 text-forest-green font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors mt-auto"
+                >
+                  Close Details
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
